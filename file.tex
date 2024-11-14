@@ -227,18 +227,18 @@ X^{(1)} \\ X^{(2)} \\ \vdots \\ X^{(K)}
 \]
 \end{definition}
 
-Note that now, we can write the sample covariance matrix defined in Equation \ref{eq:sample-covariance} as:
+Note that now, we can write the sample covariance matrix defined in Equation ?? as:
 
 \[
 \hat{\Sigma} = \frac{1}{N - K} X_c^T X_c
 \]
 
-Let $X_c = U D V^T$ be the singular value decomposition of the class-centered data matrix $X_c. Then, the sample covariance matrix can be written as:
+Let $X_c = U D V^T$ be the singular value decomposition of the class-centered data matrix $X_c$. Then, the sample covariance matrix can be written as:
 
 \begin{align*}
-\hat{\Sigma} &= \frac{1}{N-K} X_{c}^{T} X_{c}  \\
-&= \frac{1}{N-K} VD^{T}U^{T}UDV^{T} \\
-&= \frac{1}{N-K} VD^{2}V^{T} \\
+\hat{\Sigma} &= \frac{1}{N - K} X_{c}^{T} X_{c}  \\
+&= \frac{1}{N - K} VD^{T}U^{T}UDV^{T} \\
+&= \frac{1}{N - K} VD^{2}V^{T} \\
 \end{align*}
 
 And the inverse of the sample covariance matrix as:
@@ -274,10 +274,10 @@ d_{k} &= -\frac{1}{2} \mu_{k}^{T} \Sigma^{-1} \mu_{k} + \log \pi_{k} \\
 & = - \frac{N-K}{2} \| \beta_{k} \|^2_{2} + \log \pi_{k}
 \end{align*}
 
-The resulting algorithm for training the LDA classifier is summarized in Algorithm \ref{alg:lda-training}
+The resulting algorithm for training the LDA classifier is summarized in Algorithm ??
 
 \begin{algorithm}[htbp]
-\caption{LDA Training Algorithm}\label{alg:lda-training}
+\caption{LDA Training Algorithm}
 \begin{algorithmic}[1]
 \REQUIRE Training data $\{(x_i, y_i)\}_{i=1}^N$, with $x_i \in \mathbb{R}^p$, $y_i \in \{1,\ldots,K\}$
 \ENSURE Coefficients $\{ (c_k, d_k) \}_{k=1}^K$ for the discriminant functions
@@ -344,7 +344,7 @@ In terms of the random vector $X$, the transformation $W$ we want to find must s
 In LDA, we estimate $\text{Cov}(X)$ with $\hat{\Sigma}$, so we want to find $W$ such that $W \hat{\Sigma} W^T = I$. From the SVD computation we performed earlier, we know that $\hat{\Sigma} = \frac{1}{N-K}VD^2V^T$, where $V$ is orthogonal and $D$ is diagonal. Therefore,
 \begin{align*}
 I & = W \hat{\Sigma} W^T \\
-& = W V (\frac{1}{N-K}D^2) V^T
+& = W V (\frac{1}{N-K}D^2) V^T W^T
 \end{align*}
 
 We can then see that $W = \sqrt{N-K}D^{-1}V^T$ satisfies the equation. Effectively,
@@ -523,11 +523,6 @@ J(W) = \text{tr}((W^T S_B W)^{-1} (W^T S_W W))
 The solution to the optimization problem ?? is given by the matrix $W$ whose columns are the eigenvectors corresponding to the $L$ largest eigenvalues of the matrix $S_W^{-1} S_B$.
 \end{theorem}
 
-The proof of this theorem is substantially more complex than the $L=1$ case, as the use of the derivative of the trace operator respect to a matrix is involved, making the equations more intricate. The structure of the proof can be found in \cite{fisher1936} and the required matrix calculus identities in \cite{matrix-calc}.
+The proof of this theorem is substantially more complex than the $L=1$ case, as the use of the derivative of the trace operator respect to a matrix is involved, making the equations more intricate. The structure of the proof can be found in ?? and the required matrix calculus identities in ??.
 
 \end{document}
-
-\begin{thebibliography}{9}
-\bibitem{fisher1936} Fisher, R.A. (1936). The use of multiple measurements in taxonomic problems. Annals of Eugenics, 7(2), 179-188.
-\bibitem{matrix-calc} Magnus, J.R. & Neudecker, H. (2019). Matrix Differential Calculus with Applications in Statistics and Econometrics. Wiley.
-\end{thebibliography}
