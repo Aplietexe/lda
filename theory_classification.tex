@@ -1,0 +1,67 @@
+\subsection{Theory of Classification}
+
+\begin{definition}
+Let $\mathcal{X} \subseteq \mathbb{R}^p$ be the feature space and $\mathcal{Y} = \{1,\ldots,K\}$ be the set of possible class labels. A classifier is a function $\hat{G}: \mathcal{X} \to \mathcal{Y}$ that assigns a class label to each point in the feature space.
+\end{definition}
+
+The goal of classification is to find a classifier that accurately predicts the true class label $Y \in \mathcal{Y}$ of new observations $X \in \mathcal{X}$. To evaluate and compare different classifiers, we need a formal way to measure their performance. This leads us to the concept of prediction error.
+
+\begin{definition}
+Let $X \in \mathbb{R}^p$ be a random vector of features, $Y \in \{1,\ldots,K\}$ be a categorical random variable representing the class label, and $\hat{G}: \mathbb{R}^p \to \{1,\ldots,K\}$ be a classifier function. Let $L: \{1,\ldots,K\} \times \{1,\ldots,K\} \to \mathbb{R}$ be a loss function that measures the cost of misclassification.
+
+    The Expected Prediction Error (EPE) of the classifier $\hat{G}(X)$ is defined as the expected value of the loss function $L(Y, \hat{G}(X))$ over the joint distribution of $X$ and $Y$:
+\[
+\text{EPE}(\hat{G}) = \mathbb{E}[L(Y, \hat{G}(X))]
+\]
+\end{definition}
+
+The choice of loss function is crucial in measuring the performance of a classifier. Different loss functions can lead to different optimal classifiers. In this section, we'll focus on the zero-one loss function, which assigns a penalty of $1$ for every misclassification and $0$ for correct classification.
+
+\begin{definition}
+The zero-one loss function is defined as:
+\[
+L(y, k) = \begin{cases}
+0 & \text{if } y = k \\
+1 & \text{if } y \neq k
+\end{cases}
+\]
+\end{definition}
+
+We are interested in finding the classifier that minimizes the expected prediction error under the zero-one loss function, which, intuitively, is the classifier that assigns each input to the class with the highest posterior probability.
+
+\begin{theorem}
+Let $X$ be a random vector with probability density function $f_X: \mathbb{R}^p \to \mathbb{R}_{\geq 0}$, and let $Y$ be a discrete random variable taking values in $\{1,\ldots,K\}$. Assume that the conditional probability density functions $f_{X|Y}(x|y)$ exist for all $y \in \{1,\ldots,K\}$.
+
+The classifier that minimizes the expected prediction error (EPE) under the zero-one loss function assigns each input $x$ to the class with the highest posterior probability $\mathbb{P}(Y = k \mid X = x)$.
+\[
+\hat{G}(x) = \arg\max_{k=1}^K \mathbb{P}(Y = k \mid X = x)
+\]
+\end{theorem}
+
+\begin{proof}
+The expected prediction error of the classifier $\hat{G}(X)$ can be written as:
+\begin{align*}
+\mathbb{E}[L(Y, \hat{G}(X))] & = \sum_{y=1}^K \int_{\mathbb{R}^{p}} L(y, \hat{G}(x)) f_{X|Y}(x|y)\mathbb{P}(Y=y)\, dx \\
+& = \int_{\mathbb{R}^{p}} \left( \sum_{y=1}^K L(y, \hat{G}(x)) \mathbb{P}(Y = y \mid X = x) \right) f_X(x) \, dx \\
+& = \mathbb{E}_X\left[ \sum_{y=1}^K L(y, \hat{G}(X)) \mathbb{P}(Y = y \mid X = X) \right]
+\end{align*}
+where we used Bayes' theorem and the law of total probability. To minimize this expectation, it suffices to minimize the inner sum for each $x$:
+\[
+\hat{G}(x) = \arg\min_{k=1}^K \sum_{y=1}^K L(y, k) \mathbb{P}(Y = y \mid X = x)
+\]
+Using the zero-one loss function:
+\begin{align*}
+\hat{G}(x) & = \arg\min_{k=1}^K \left(1 - \mathbb{P}(Y = k \mid X = x)\right) \\
+& = \arg\max_{k=1}^K \mathbb{P}(Y = k \mid X = x)
+\end{align*}
+\end{proof}
+
+This theoretical result is known as the Bayes optimal classifier, and it provides the foundation for developing practical classification algorithms.
+
+\begin{definition}
+The Bayes optimal classifier is the classifier that assigns each input $x$ to the class $k$ that maximizes the posterior probability $\mathbb{P}(Y = k \mid X = x)$:
+\[
+\hat{G}(x) = \arg\max_{k=1}^K \mathbb{P}(Y = k \mid X = x)
+\]
+\end{definition}
+The Bayes optimal classifier minimizes the expected prediction error and provides the best possible classification performance given the true class-conditional distributions.

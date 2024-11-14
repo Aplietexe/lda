@@ -1,0 +1,226 @@
+\subsection{LDA: Approximating the Bayes optimal classifier}
+
+In practice, obtaining the Bayes optimal classifier is often impossible because it requires knowledge of the posterior probabilities $\mathbb{P}(Y = k \mid X = x)$. These posterior probabilities are typically unknown, as they depend on the underlying distribution of the data, which is rarely available in real-world scenarios. Therefore, we need to approximate the Bayes classifier by making assumptions and using estimation techniques.
+
+To approximate the Bayes classifier, we will employ Bayes' theorem. We introduce the following notation:
+\begin{itemize}
+    \item Let $f_k(x)$ represent the class-conditional density of $X$ for class $Y = k$.
+    \item Let $\pi_k$ represent the prior probability of class $k$.
+\end{itemize}
+
+Using Bayes' theorem, we can express the posterior probability $\mathbb{P}(Y = k \mid X = x)$ as:
+\[
+\mathbb{P}(Y = k \mid X = x) = \frac{f_k(x) \, \pi_k}{\sum_{\ell=1}^K f_\ell(x) \, \pi_\ell}
+\]
+
+This formulation allows us to approximate the posterior probabilities using estimates of the class-conditional densities $f_k(x)$ and the priors $\pi_k$.
+
+Additionally, LDA makes the following assumptions:
+
+\begin{enumerate}
+    \item \textbf{Multivariate Gaussian Distributions}: The class-conditional densities $f_k(x)$ follow multivariate Gaussian distributions with mean vector $\mu_k$ and common covariance matrix $\Sigma$:
+    \[
+    f_k(x) = \frac{1}{(2\pi)^{p/2} |\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(x - \mu_k)^T \Sigma^{-1} (x - \mu_k)\right)
+    \]
+    \item \textbf{Equal Covariance Matrix}: The covariance matrix $\Sigma$ is the same for all classes.
+\end{enumerate}
+
+Additionally, we will assume the data is centered,
+
+\[
+\mu = \sum_{i=1}^N x_i = 0
+\]
+
+And that we have more samples than features, and more features than classes,
+
+\[
+N > p > K
+\]
+
+The parameters of the distribution and the priors can be estimated from training data. With this purpose, we define some notation:
+
+\begin{itemize}
+    \item Let $N_k$ be the number of observations in class $k$.
+    \item Let $N = \sum_{k=1}^K N_k$ be the total number of observations.
+    \item Let $\{(x_i, g_i)\}_{i=1}^N$ be the training data, where $x_i$ are the feature vectors and $g_i$ are the true class labels.
+\end{itemize}
+
+We will estimate the priors $\pi_k$ by the class proportions, and the class means and covariance matrix by the sample means and unbiased sample covariance matrix of the training data:
+
+\begin{itemize}
+    \item \textbf{Class Priors}:
+    \[
+    \hat{\pi}_k = \frac{N_k}{N}
+    \]
+    \item \textbf{Class Means}:
+    \[
+    \hat{\mu}_k = \frac{1}{N_k} \sum_{i: g_i = k} x_i
+    \]
+    \item \textbf{Covariance Matrix}:
+    \begin{equation}
+    \hat{\Sigma} = \frac{1}{N - K} \sum_{k=1}^K \sum_{i: g_i = k} (x_i - \hat{\mu}_k)(x_i - \hat{\mu}_k)^T \label{eq:sample-covariance}
+    \end{equation}
+\end{itemize}
+
+We will assume the sample covariance matrix is invertible.
+
+\subsubsection{Derivation of the Classifier}
+
+We will start from the Bayes optimal classifier and derive the LDA classifier under the previous assumptions and using the mentioned estimates.
+
+\begin{align}
+\hat{Y} &= \arg\max_{k=1}^K \, \mathbb{P}(Y = k \mid X = x) \nonumber \\
+&= \arg\max_{k=1}^K \, \frac{f_k(x) \, \hat{\pi}_k}{\sum_{\ell=1}^K f_\ell(x) \, \hat{\pi}_\ell} \nonumber \\
+&= \arg\max_{k=1}^K \, f_k(x) \hat{\pi}_k \nonumber \\
+&= \arg\max_{k=1}^K \, \left\{\frac{1}{(2\pi)^{p/2} |\hat{\Sigma}|^{1/2}} \exp\left(-\frac{1}{2}(x - \hat{\mu}_k)^T \hat{\Sigma}^{-1} (x - \hat{\mu}_k)\right) \hat{\pi}_k\right\} \nonumber \\
+&= \arg\max_{k=1}^K \, \left\{-\frac{1}{2}(x - \hat{\mu}_k)^T \hat{\Sigma}^{-1} (x - \hat{\mu}_k) + \log \hat{\pi}_k\right\} \label{eq:mahalanobis} \\
+&= \arg\max_{k=1}^K \, \left\{-\frac{1}{2}x^T \hat{\Sigma}^{-1} x + x^T \hat{\Sigma}^{-1} \hat{\mu}_k - \frac{1}{2}\hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log \hat{\pi}_k\right\} \nonumber \\
+&= \arg\max_{k=1}^K \, \left\{x^T \hat{\Sigma}^{-1} \hat{\mu}_k - \frac{1}{2}\hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log \hat{\pi}_k\right\} \nonumber
+\end{align}
+
+We have then derived a set of functions that, given an unseen feature vector $x$, the classifier assigns it to the class $k$ that maximizes the respective function. These functions are known as the discriminant functions.
+
+\begin{definition}
+The discriminant function for class $k$ is:
+\[
+\delta_k(x) = x^T \hat{\Sigma}^{-1} \hat{\mu}_k - \frac{1}{2} \hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log(\hat{\pi}_k)
+\]
+\end{definition}
+
+\subsubsection{Numerical Implementation}
+
+To evaluate the discriminant functions efficiently, we will compute and store the coefficients $c_k$ and $d_k$ for each class $k$ from the training data:
+\begin{align*}
+c_k &= \hat{\Sigma}^{-1} \hat{\mu}_k \\
+d_k &= -\frac{1}{2} \hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log \hat{\pi}_k
+\end{align*}
+
+Then the discriminant function simplifies to:
+\[
+\delta_k(x) = x^T c_k + d_k
+\]
+
+While we could explicitly compute the covariance matrix and its inverse, in practice it becomes computationally expensive for datasets with a large number of features, as well as numerically unstable, so a different algorithm will be used.
+
+\begin{definition}
+The class-centered data matrix of the $k$-th class is defined as the matrix $X^{(k)} \in \mathbb{R}^{N_{k} \times p}$ whose rows are the data points of the $k$-th class with the respective mean subtracted:
+
+$$
+X^{(k)} = \begin{bmatrix}
+x_{1} - \mu_{k} \\
+x_{2} - \mu_{k}  \\
+\vdots \\  \\
+x_{N_{k}} - \mu_{k}
+\end{bmatrix}
+$$
+\end{definition}
+
+\begin{definition}
+The class-centered data matrix $X_c \in \mathbb{R}^{N \times p}$ is the concatenation of the class-centered data matrices for all classes:
+\[
+X_c = \begin{bmatrix}
+X^{(1)} \\ X^{(2)} \\ \vdots \\ X^{(K)}
+\end{bmatrix}
+\]
+\end{definition}
+
+We will assume for simplicity that $X_c$ has full rank.
+
+Note that now, we can write the sample covariance matrix defined in Equation \ref{eq:sample-covariance} as:
+
+\[
+\hat{\Sigma} = \frac{1}{N - K} X_c^T X_c
+\]
+
+Let $X_c = U D V^T$ be the singular value decomposition of the class-centered data matrix $X_c$. Then, the sample covariance matrix can be written as:
+
+\begin{align*}
+\hat{\Sigma} &= \frac{1}{N - K} X_{c}^{T} X_{c}  \\
+&= \frac{1}{N - K} VD^{T}U^{T}UDV^{T} \\
+&= \frac{1}{N - K} VD^{2}V^{T} \\
+\end{align*}
+
+And the inverse of the sample covariance matrix as:
+
+\begin{align*}
+\hat{\Sigma}^{-1} &= \left( \frac{1}{N-K} VD^{2}V^{T} \right)^{-1} \\
+& = VD^{-2}V^{T} (N-K)
+\end{align*}
+
+To reduce the number of multiplications, we define the intermediate coefficients $\alpha_k$ and $\beta_k$ for each class $k$:
+
+
+\begin{align*}
+\alpha_{k} & = V^{T} \mu_{k}  \\
+\beta_{k} &= D^{-1}\alpha_{k}
+\end{align*}
+
+Now the $c_{k}$ coefficients simplify to
+
+\begin{align*}
+c_{k} &= \Sigma^{-1} \mu_{k} \\
+&= VD^{-2}V^{T} (N-K) \mu_{k} \\
+&= VD^{-2} \alpha_{k} (N-K) \\
+\end{align*}
+
+and the $d_{k}$ coefficients simplify to
+
+\begin{align*}
+d_{k} &= -\frac{1}{2} \mu_{k}^{T} \Sigma^{-1} \mu_{k} + \log \pi_{k} \\
+&= -\frac{1}{2} \mu_{k}^{T} VD^{-2}V^{T} (N-K) \mu_{k} + \log \pi_{k} \\
+&= -\frac{1}{2} \alpha_{k}^{T} D^{-2} \alpha_{k} (N-K) + \log \pi_{k}  \\
+&= -\frac{1}{2} \beta_{k}^{T} \beta_{k} (N-K) + \log \pi_{k} \\
+& = - \frac{N-K}{2} \| \beta_{k} \|^2_{2} + \log \pi_{k}
+\end{align*}
+
+The resulting algorithm for training the LDA classifier is summarized in Algorithm \ref{alg:lda-training}.
+
+\begin{algorithm}[htbp]
+\caption{LDA Training Algorithm} \label{alg:lda-training}
+\begin{algorithmic}[1]
+\REQUIRE Training data $\{(x_i, y_i)\}_{i=1}^N$, with $x_i \in \mathbb{R}^p$, $y_i \in \{1,\ldots,K\}$
+\ENSURE Coefficients $\{ (c_k, d_k) \}_{k=1}^K$ for the discriminant functions
+
+\STATE \textbf{Initialization:}
+\begin{itemize}
+    \item $N \gets$ total number of samples
+    \item For each class $k$, initialize $N_k \gets 0$, $\hat{\mu}_k \gets 0$
+\end{itemize}
+
+\STATE \textbf{Compute Class Counts and Sums:}
+\FOR{$i = 1$ to $N$}
+    \STATE $k \gets y_i$
+    \STATE $N_k \gets N_k + 1$
+    \STATE $\hat{\mu}_k \gets \hat{\mu}_k + x_i$
+\ENDFOR
+
+\STATE \textbf{Compute Class Means and Priors:}
+\FOR{$k = 1$ to $K$}
+    \STATE $\hat{\mu}_k \gets \hat{\mu}_k / N_k$
+    \STATE $\hat{\pi}_k \gets N_k / N$
+\ENDFOR
+
+\STATE \textbf{Construct Centered Data Matrix:}
+\STATE Initialize $X_c \in \mathbb{R}^{N \times p}$
+\STATE $index \gets 1$
+\FOR{$k = 1$ to $K$}
+    \FOR{each $x_i$ such that $y_i = k$}
+        \STATE $X_c(index, :) \gets x_i - \hat{\mu}_k$
+        \STATE $index \gets index + 1$
+    \ENDFOR
+\ENDFOR
+
+\STATE \textbf{Compute SVD of $X_c$:}
+\STATE $[U, D, V^\top] \gets \text{svd}(X_c)$
+
+\STATE \textbf{Compute Coefficients for Each Class:}
+\FOR{$k = 1$ to $K$}
+    \STATE $\alpha_k \gets V^\top \hat{\mu}_k$
+    \STATE $\beta_k \gets D^{-1} \alpha_k$
+    \STATE $c_k \gets (N - K) V D^{-2} \alpha_k$
+    \STATE $d_k \gets -\dfrac{N - K}{2} \| \beta_k \|_2^2 + \ln \hat{\pi}_k$
+\ENDFOR
+
+\RETURN Coefficients $\{ (c_k, d_k) \}_{k=1}^K$
+\end{algorithmic}
+\end{algorithm}

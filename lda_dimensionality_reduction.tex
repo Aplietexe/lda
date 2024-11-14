@@ -1,0 +1,197 @@
+\section{LDA for dimensionality reduction}
+
+\subsection{$K-1$-dimensional representation}
+
+At this point, we notice that in equation \ref{eq:mahalanobis} in the decision rule derivation, we have something resembling a squared Euclidean distance, except for the presence of $\hat{\Sigma}^{-1}$. To simplify this, we can transform the data so that the covariance matrix becomes the identity, allowing us to directly use Euclidean distances.
+
+In terms of the random vector $X$, the transformation $W$ we want to find must satisfy $\text{Cov}(WX) = I$. We can develop the left-hand side of this equation as:
+\begin{align}
+\text{Cov}(WX) &= \mathbb{E}\left[ (WX - \mathbb{E}[WX])(WX - \mathbb{E}[WX])^T \right] \nonumber \\
+&= \mathbb{E}\left[ (WX - W\mu)(WX - W\mu)^T \right] \nonumber \\
+&= \mathbb{E}\left[ W(X - \mu)(X - \mu)^T W^T \right] \nonumber \\
+&= W \mathbb{E}\left[ (X - \mu)(X - \mu)^T \right] W^T \nonumber \\
+&= W \text{Cov}(X) W^T \label{eq:covariance-transformation}
+\end{align}
+
+In LDA, we estimate $\text{Cov}(X)$ with $\hat{\Sigma}$, so we want to find $W$ such that $W \hat{\Sigma} W^T = I$. From the SVD computation we performed earlier, we know that $\hat{\Sigma} = \frac{1}{N-K}VD^2V^T$, where $V$ is orthogonal and $D$ is diagonal. Therefore,
+\begin{align*}
+I & = W \hat{\Sigma} W^T \\
+& = W V (\frac{1}{N-K}D^2) V^T W^T
+\end{align*}
+
+We can then see that $W = \sqrt{N-K}D^{-1}V^T$ satisfies the equation. Effectively,
+
+\begin{align*}
+W \hat{\Sigma} W^T &= (\sqrt{N-K}D^{-1}V^T) \frac{1}{N-K}VD^2V^T (\sqrt{N-K}D^{-1}V^T)^T \\
+&= (D^{-1}V^T) VD^2V^T (D^{-1}V^T)^T \\
+&= D^{-1}V^T VD^2V^T V D^{-1} \\
+&= D^{-1}D^2 D^{-1} \\
+&= D^{-1}D^{1/2} D^{1/2} D^{-1} \\
+& = I
+\end{align*}
+
+
+This is called a sphering or whitening transformation. We can then define:
+\begin{itemize}
+    \item The transformed sample: $x^* = \sqrt{N-K}D^{-1}V^Tx$
+    \item The transformed means: $\mu_k^* = \sqrt{N-K}D^{-1}V^T\hat{\mu}_k$
+\end{itemize}
+
+Under this transformation, the decision criterion simplifies to:
+\begin{align*}
+\hat{Y} &= \arg\max_{k=1}^K \left\{-\frac{1}{2}(x - \hat{\mu}_k)^T \hat{\Sigma}^{-1} (x - \hat{\mu}_k) + \log \hat{\pi}_k\right\} \\
+&= \arg\max_{k=1}^K \left\{-\frac{1}{2}(V D x^* - V D \mu_k^*)^T V^T D^{-2} V (V D x^* - V D \mu_k^*) + \log \hat{\pi}_k\right\} \\
+&= \arg\max_{k=1}^K \left\{-\frac{1}{2}(D x^* - D \mu_k^*)^T D^{-2} (D x^* - D \mu_k^*) + \log \hat{\pi}_k\right\} \\
+&= \arg\max_{k=1}^K \left\{-\frac{1}{2}(x^* - \mu_k^*)^T (D D^{-2} D) (x^* - \mu_k^*) + \log \hat{\pi}_k\right\} \\
+&= \arg\max_{k=1}^K \left\{-\frac{1}{2}(x^* - \mu_k^*)^T (x^* - \mu_k^*) + \log \hat{\pi}_k\right\} \\
+&= \arg\max_{k=1}^K \left\{-\frac{1}{2}\|x^* - \mu_k^*\|_2^2 + \log \hat{\pi}_k\right\}
+\end{align*}
+
+\begin{definition}
+The discriminant function for class $k$ in the transformed space is:
+\[
+\delta_k^*(x^*) = -\frac{1}{2}\|x^* - \mu_k^*\|_2^2 + \log \hat{\pi}_k
+\]
+\end{definition}
+
+This transformation makes the decision rule more intuitive, effectively reducing the classification problem to one based on Euclidean distances to $K$ points in the transformed space, while maintaining the same decision boundaries. Notice that only the projection of $x$ in the subspace spanned by the transformed class means affects the decision. This suggests that LDA can be used as a dimensionality reduction technique, projecting the data into a lower-dimensional space while maximizing class separability.
+
+\begin{theorem}
+The subspace spanned by the tranformed class means $\mu_k^*$ is at most $K-1$ dimensional.
+\[
+\dim(\mathrm{span}(\mu_1^*, \ldots, \mu_K^*)) \leq K-1
+\]
+\end{theorem}
+
+\begin{proof}
+We assumed the data to be centered, therefore,
+\begin{align*}
+\mu &= 0 \\
+\frac{1}{N} \sum_{k=1}^K N_k \mu_k &= 0 \\
+\frac{1}{N} \sum_{k=1}^K N_k W\mu_k &= W0 \\
+\frac{1}{N} \sum_{k=1}^K N_k \mu_k^* & = 0
+\end{align*}
+
+This means that the class means $\mu_k^*$ are linearly dependent, and therefore, the subspace spanned by them must have a dimension strictly less than $K$.
+\end{proof}
+
+In modern machine learning libraries such as \texttt{scikit-learn}, a de-sphering transformation is often applied at the end when using LDA for dimensionality reduction, so that the plotted data conserves the original covariance structure. In exchange, the decision rule is less intuitive in a lower-dimension plot.
+
+\subsection{$L$-dimensional representation}
+Often, $K-1$ is still too high a dimension for visualization or further processing. In these cases, we may want to project the data into an $L$-dimensional subspace, where $L \leq K-1$, while maximizing class separability. For this, we want to find the matrix $W \in \mathbb{R}^{p \times L}$ that projects the data into an $L$-dimensional subspace, maximizing the between-class variance while minimizing the within-class variance.
+
+In order to quantify the within-class and between-class variance, we define the following matrices:
+
+\begin{definition}
+The within-class scatter matrix $S_W$ is defined as:
+\[
+S_W = \sum_{k=1}^K \sum_{i: y_i = k} (x_i - \mu_k)(x_i - \mu_k)^T
+\]
+\end{definition}
+
+Note that $S_W$ can be expressed in terms of the class-centered data matrix $X_c$ or the sample covariance matrix $\hat{\Sigma}$ as:
+
+\[
+S_W = X_c^T X_c = (N - K) \hat{\Sigma}
+\]
+
+\begin{definition}
+The between-class scatter matrix $S_B$ is defined as:
+\[
+S_B = \sum_{k=1}^K N_k (\mu_k - \mu)(\mu_k - \mu)^T
+\]
+\end{definition}
+
+Under our assumption of centered data, $S_B$ simplifies to:
+
+\[
+S_B = \sum_{k=1}^K N_k \mu_k \mu_k^T
+\]
+
+The goal is to find the projection matrix $W$ that maximizes the ratio of the between-class scatter to the within-class scatter.
+
+\subsubsection{$L=1$ case}
+For $L=1$, the projection matrix $W$ is a vector $w \in \mathbb{R}^p$, and from equation \ref{eq:covariance-transformation}, we see that maximizing the between-class scatter is equivalent to maximizing $w^T S_B w$, while minimizing the within-class scatter is equivalent to minimizing $w^T S_W w$. Unifying these two objectives, we define the Fisher criterion.
+
+\begin{definition}
+The Fisher criterion is defined as the ratio of the between-class scatter to the within-class scatter:
+\[
+J(w) = \frac{w^T S_B w}{w^T S_W w}
+\]
+\end{definition}
+
+
+\begin{theorem}
+The Fisher criterion is invariant to rescaling of the projection vector $w$.
+\[
+\forall \alpha \in \mathbb{R} \setminus \{0\}, \quad J(\alpha w) = J(w) \quad
+\]
+\end{theorem}
+
+\begin{proof}
+\begin{align*}
+J(\alpha w) &= \frac{(\alpha w)^T S_B (\alpha w)}{(\alpha w)^T S_W (\alpha w)} \\
+& = \frac{\alpha^2 w^T S_B w}{\alpha^2 w^T S_W w} \\
+& = \frac{w^T S_B w}{w^T S_W w} \\
+& = J(w)
+\end{align*}
+\end{proof}
+
+Because of this invariance, we can impose the constraint $w^T S_W w = 1$ to simplify the optimization problem, which now reads:
+
+\begin{align} \label{eq:single_dimension_optimization}
+& \underset{w \in \mathbb{R}^p}{\mathrm{maximize}} \quad w^T S_B w \\
+& \text{subject to} \quad w^T S_W w = 1 \nonumber
+\end{align}
+
+\begin{theorem}
+The solution to the optimization problem \ref{eq:single_dimension_optimization} is given by the eigenvector corresponding to the largest eigenvalue of the matrix $S_W^{-1} S_B$.
+\end{theorem}
+
+\begin{proof}
+The Lagrangian of the optimization problem is:
+\[
+\mathcal{L}(w, \lambda) = w^T S_B w - \lambda(w^T S_W w - 1)
+\]
+
+To take the derivative respect to $w$, we will use the following matrix calculus identity:
+\[
+\frac{\partial w^T A w}{\partial w} = 2Aw
+\]
+
+Differentiating the Lagrangian with respect to $w$ and setting it to zero, we get:
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial w} &= 2S_B w - 2\lambda S_W w \\
+0 &= S_B w - \lambda S_W w \\
+S_B w &= \lambda S_W w \\
+S_W^{-1} S_B w &= \lambda w
+\end{align*}
+
+And therefore the solution must be an eigenvector of $S_W^{-1} S_B$, associated to the eigenvalue $\lambda$. Replacing in the original expression,
+
+\begin{align*}
+J(w) &= \frac{w^T S_B w}{w^T S_W w} \\
+&= \frac{w^T \lambda S_W w}{w^T S_W w} \\
+& = \lambda
+\end{align*}
+
+Therefore, $w$ must be the eigenvector corresponding to the largest eigenvalue of $S_W^{-1} S_B$.
+
+\end{proof}
+
+\subsubsection{$L>1$ case}
+For $L>1$, the projection matrix $W$ is a matrix $W \in \mathbb{R}^{p \times L}$, and $W^T S_B W$ and $W^T S_W W$ are now $L \times L$ matrices. Different generalizations of the Fisher criterion exist, most of which however have the same solution. One common generalization is the following:
+
+\begin{definition}
+The generalized Fisher criterion is defined as the trace of the ratio of the between-class scatter to the within-class scatter:
+
+\[
+J(W) = \text{tr}((W^T S_B W)^{-1} (W^T S_W W))
+\]
+\end{definition}
+
+\begin{theorem}
+The maximum of the generalized Fisher criterion $J(W)$ is achieved by the matrix $W$ whose columns are the eigenvectors corresponding to the $L$ largest eigenvalues of the matrix $S_W^{-1} S_B$.
+\end{theorem}
+
+The proof of this theorem is substantially more complex than the $L=1$ case, as the use of the derivative of the trace operator respect to a matrix is involved, making the equations more intricate. The structure of the proof can be found in \cite{fukunaga1990introduction}.
