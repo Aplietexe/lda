@@ -1,10 +1,11 @@
-\section{LDA for dimensionality reduction}
+\section{LDA para reducción de dimensionalidad}
 
-\subsection{$K-1$-dimensional representation}
+\subsection{Representación $K-1$ dimensional}
 
-At this point, we notice that in equation \ref{eq:mahalanobis} in the decision rule derivation, we have something resembling a squared Euclidean distance, except for the presence of $\hat{\Sigma}^{-1}$. To simplify this, we can transform the data so that the covariance matrix becomes the identity, allowing us to directly use Euclidean distances.
+Observemos que en la ecuación \ref{eq:mahalanobis}, en la derivación del clasificador, tenemos una expresión que se asemeja a una distancia euclidiana al cuadrado, salvo por la presencia de $\hat{\Sigma}^{-1}$. Para simplificar esto, podemos transformar los datos de modo que la matriz de covarianza se convierta en la identidad, lo que nos permitirá usar directamente distancias euclidianas.
 
-In terms of the random vector $X$, the transformation $W$ we want to find must satisfy $\text{Cov}(WX) = I$. We can develop the left-hand side of this equation as:
+En términos del vector aleatorio $X$, la transformación $W$ que queremos encontrar debe satisfacer $\text{Cov}(WX) = I$. Podemos desarrollar el lado izquierdo de esta ecuación como:
+
 \begin{align}
 \text{Cov}(WX) &= \mathbb{E}\left[ (WX - \mathbb{E}[WX])(WX - \mathbb{E}[WX])^T \right] \nonumber \\
 &= \mathbb{E}\left[ (WX - W\mu)(WX - W\mu)^T \right] \nonumber \\
@@ -13,31 +14,31 @@ In terms of the random vector $X$, the transformation $W$ we want to find must s
 &= W \text{Cov}(X) W^T \label{eq:covariance-transformation}
 \end{align}
 
-In LDA, we estimate $\text{Cov}(X)$ with $\hat{\Sigma}$, so we want to find $W$ such that $W \hat{\Sigma} W^T = I$. From the SVD computation we performed earlier, we know that $\hat{\Sigma} = \frac{1}{N-K}VD^2V^T$, where $V$ is orthogonal and $D$ is diagonal. Therefore,
+En LDA, estimamos $\text{Cov}(X)$ con $\hat{\Sigma}$, por lo que queremos encontrar $W$ tal que $W \hat{\Sigma} W^T = I$. A partir de la computación de la SVD que realizamos anteriormente, sabemos que $\hat{\Sigma} = \frac{1}{N-K}VD^2V^T$, donde $V$ es ortogonal y $D$ es diagonal. Por lo tanto,
+
 \begin{align*}
 I & = W \hat{\Sigma} W^T \\
-& = W V (\frac{1}{N-K}D^2) V^T W^T
+& = W V \left(\frac{1}{N-K}D^2\right) V^T W^T
 \end{align*}
 
-We can then see that $W = \sqrt{N-K}D^{-1}V^T$ satisfies the equation. Effectively,
+Entonces, podemos ver que $W = \sqrt{N-K}D^{-1}V^T$ satisface la ecuación. Efectivamente,
 
 \begin{align*}
 W \hat{\Sigma} W^T &= (\sqrt{N-K}D^{-1}V^T) \frac{1}{N-K}VD^2V^T (\sqrt{N-K}D^{-1}V^T)^T \\
 &= (D^{-1}V^T) VD^2V^T (D^{-1}V^T)^T \\
-&= D^{-1}V^T VD^2V^T V D^{-1} \\
+&= D^{-1}V^T V D^2 V^T V D^{-1} \\
 &= D^{-1}D^2 D^{-1} \\
 &= D^{-1}D^{1/2} D^{1/2} D^{-1} \\
 & = I
 \end{align*}
 
-
-This is called a sphering or whitening transformation. We can then define:
+Esto se llama una transformación de sphering o whitening. Entonces podemos definir:
 \begin{itemize}
-    \item The transformed sample: $x^* = \sqrt{N-K}D^{-1}V^Tx$
-    \item The transformed means: $\mu_k^* = \sqrt{N-K}D^{-1}V^T\hat{\mu}_k$
+    \item La muestra transformada: $x^* = \sqrt{N-K}D^{-1}V^Tx$
+    \item Las medias transformadas: $\mu_k^* = \sqrt{N-K}D^{-1}V^T\hat{\mu}_k$
 \end{itemize}
 
-Under this transformation, the decision criterion simplifies to:
+Bajo esta transformación, el criterio de decisión se simplifica a:
 \begin{align*}
 \hat{Y} &= \arg\max_{k=1}^K \left\{-\frac{1}{2}(x - \hat{\mu}_k)^T \hat{\Sigma}^{-1} (x - \hat{\mu}_k) + \log \hat{\pi}_k\right\} \\
 &= \arg\max_{k=1}^K \left\{-\frac{1}{2}(V D x^* - V D \mu_k^*)^T V^T D^{-2} V (V D x^* - V D \mu_k^*) + \log \hat{\pi}_k\right\} \\
@@ -48,23 +49,23 @@ Under this transformation, the decision criterion simplifies to:
 \end{align*}
 
 \begin{definition}
-The discriminant function for class $k$ in the transformed space is:
+La función discriminante para la clase $k$ en el espacio transformado es:
 \[
 \delta_k^*(x^*) = -\frac{1}{2}\|x^* - \mu_k^*\|_2^2 + \log \hat{\pi}_k
 \]
 \end{definition}
 
-This transformation makes the decision rule more intuitive, effectively reducing the classification problem to one based on Euclidean distances to $K$ points in the transformed space, while maintaining the same decision boundaries. Notice that only the projection of $x$ in the subspace spanned by the transformed class means affects the decision. This suggests that LDA can be used as a dimensionality reduction technique, projecting the data into a lower-dimensional space while maximizing class separability.
+Esta transformación hace que la regla de decisión sea más intuitiva, reduciendo efectivamente el problema de clasificación a uno basado en distancias euclidianas a $K$ puntos en el espacio transformado, mientras que mantiene las mismas fronteras de decisión. Observemos que solo la proyección de $x$ en el subespacio abarcado por las medias transformadas de clase afecta la decisión. Esto sugiere que LDA puede usarse como una técnica de reducción de dimensionalidad, proyectando los datos en un espacio de menor dimensión mientras se maximiza la separabilidad de las clases.
 
 \begin{theorem}
-The subspace spanned by the tranformed class means $\mu_k^*$ is at most $K-1$ dimensional.
+El subespacio generado por las medias transformadas $\mu_k^*$ es de dimensión menor o igual a $K-1$.
 \[
 \dim(\mathrm{span}(\mu_1^*, \ldots, \mu_K^*)) \leq K-1
 \]
 \end{theorem}
 
 \begin{proof}
-We assumed the data to be centered, therefore,
+Asumimos que los datos están centrados, por lo tanto:
 \begin{align*}
 \mu &= 0 \\
 \frac{1}{N} \sum_{k=1}^K N_k \mu_k &= 0 \\
@@ -72,57 +73,56 @@ We assumed the data to be centered, therefore,
 \frac{1}{N} \sum_{k=1}^K N_k \mu_k^* & = 0
 \end{align*}
 
-This means that the class means $\mu_k^*$ are linearly dependent, and therefore, the subspace spanned by them must have a dimension strictly less than $K$.
+Esto significa que las medias $\mu_k^*$ son linealmente dependientes, y por lo tanto, el subespacio que abarcan debe tener una dimensión estrictamente menor que $K$.
 \end{proof}
 
-In modern machine learning libraries such as \texttt{scikit-learn}, a de-sphering transformation is often applied at the end when using LDA for dimensionality reduction, so that the plotted data conserves the original covariance structure. In exchange, the decision rule is less intuitive in a lower-dimension plot.
+En bibliotecas modernas de aprendizaje automático como \texttt{scikit-learn}, a menudo se aplica una transformación de de-sphering como paso final cuando se usa LDA para reducción de dimensionalidad, de modo que los datos conserven la estructura de covarianza original. A cambio, la regla de decisión es menos intuitiva si se realiza un gráfico en el espacio transformado.
 
-\subsection{$L$-dimensional representation}
-Often, $K-1$ is still too high a dimension for visualization or further processing. In these cases, we may want to project the data into an $L$-dimensional subspace, where $L \leq K-1$, while maximizing class separability. For this, we want to find the matrix $W \in \mathbb{R}^{p \times L}$ that projects the data into an $L$-dimensional subspace, maximizing the between-class variance while minimizing the within-class variance.
+\subsection{Representación $L$-dimensional}
 
-In order to quantify the within-class and between-class variance, we define the following matrices:
+Con frecuencia, $K-1$ dimensiones siguen siendo demasiadas para visualización o procesamiento adicional. En estos casos, podemos desear proyectar los datos en un subespacio de $L$ dimensiones, donde $L \leq K-1$, mientras maximizamos la separabilidad entre clases. Para ello, buscamos la matriz $W \in \mathbb{R}^{p \times L}$ que proyecte los datos en un subespacio de $L$ dimensiones, maximizando la varianza entre clases mientras minimiza la varianza dentro de las clases.
+
+Para cuantificar la varianza dentro de clases y entre clases, definimos las siguientes matrices:
 
 \begin{definition}
-The within-class scatter matrix $S_W$ is defined as:
+La matriz de dispersión dentro de clases $S_W$ se define como:
 \[
 S_W = \sum_{k=1}^K \sum_{i: y_i = k} (x_i - \mu_k)(x_i - \mu_k)^T
 \]
 \end{definition}
 
-Note that $S_W$ can be expressed in terms of the class-centered data matrix $X_c$ or the sample covariance matrix $\hat{\Sigma}$ as:
-
+Observemos que $S_W$ puede expresarse en términos de la matriz de datos centrados por clase $X_c$ o de la matriz de covarianza muestral $\hat{\Sigma}$ como:
 \[
 S_W = X_c^T X_c = (N - K) \hat{\Sigma}
 \]
 
 \begin{definition}
-The between-class scatter matrix $S_B$ is defined as:
+La matriz de dispersión entre clases $S_B$ se define como:
 \[
 S_B = \sum_{k=1}^K N_k (\mu_k - \mu)(\mu_k - \mu)^T
 \]
 \end{definition}
 
-Under our assumption of centered data, $S_B$ simplifies to:
-
+Bajo nuestra suposición de datos centrados, $S_B$ se simplifica a:
 \[
 S_B = \sum_{k=1}^K N_k \mu_k \mu_k^T
 \]
 
-The goal is to find the projection matrix $W$ that maximizes the ratio of the between-class scatter to the within-class scatter.
+El objetivo es encontrar la matriz de proyección $W$ que maximice la razón de la dispersión entre clases a la dispersión dentro de clases.
 
-\subsubsection{$L=1$ case}
-For $L=1$, the projection matrix $W$ is a vector $w \in \mathbb{R}^p$, and from equation \ref{eq:covariance-transformation}, we see that maximizing the between-class scatter is equivalent to maximizing $w^T S_B w$, while minimizing the within-class scatter is equivalent to minimizing $w^T S_W w$. Unifying these two objectives, we define the Fisher criterion.
+\subsubsection{Caso $L=1$}
+
+Para $L=1$, la matriz de proyección $W$ es un vector $w \in \mathbb{R}^p$, y a partir de la ecuación \ref{eq:covariance-transformation}, vemos que maximizar la dispersión entre clases equivale a maximizar $w^T S_B w$, mientras que minimizar la dispersión dentro de clases equivale a minimizar $w^T S_W w$. Unificando estos dos objetivos, definimos el criterio de Fisher.
 
 \begin{definition}
-The Fisher criterion is defined as the ratio of the between-class scatter to the within-class scatter:
+El criterio de Fisher se define como la razón de la dispersión entre clases a la dispersión dentro de clases:
 \[
 J(w) = \frac{w^T S_B w}{w^T S_W w}
 \]
 \end{definition}
 
-
 \begin{theorem}
-The Fisher criterion is invariant to rescaling of the projection vector $w$.
+El criterio de Fisher es invariante bajo un escalado del vector de proyección $w$.
 \[
 \forall \alpha \in \mathbb{R} \setminus \{0\}, \quad J(\alpha w) = J(w) \quad
 \]
@@ -137,7 +137,7 @@ J(\alpha w) &= \frac{(\alpha w)^T S_B (\alpha w)}{(\alpha w)^T S_W (\alpha w)} \
 \end{align*}
 \end{proof}
 
-Because of this invariance, we can impose the constraint $w^T S_W w = 1$ to simplify the optimization problem, which now reads:
+Debido a esta invariancia, podemos imponer la restricción $w^T S_W w = 1$ para simplificar el problema de optimización, que ahora se escribe como:
 
 \begin{align} \label{eq:single_dimension_optimization}
 & \underset{w \in \mathbb{R}^p}{\mathrm{maximize}} \quad w^T S_B w \\
@@ -145,21 +145,21 @@ Because of this invariance, we can impose the constraint $w^T S_W w = 1$ to simp
 \end{align}
 
 \begin{theorem}
-The solution to the optimization problem \ref{eq:single_dimension_optimization} is given by the eigenvector corresponding to the largest eigenvalue of the matrix $S_W^{-1} S_B$.
+La solución al problema de optimización \ref{eq:single_dimension_optimization} está dada por el autovector correspondiente al mayor autovalor de la matriz $S_W^{-1} S_B$.
 \end{theorem}
 
 \begin{proof}
-The Lagrangian of the optimization problem is:
+El Lagrangiano del problema de optimización es:
 \[
 \mathcal{L}(w, \lambda) = w^T S_B w - \lambda(w^T S_W w - 1)
 \]
 
-To take the derivative respect to $w$, we will use the following matrix calculus identity:
+Para derivar con respecto a $w$, utilizamos la siguiente identidad del cálculo matricial:
 \[
 \frac{\partial w^T A w}{\partial w} = 2Aw
 \]
 
-Differentiating the Lagrangian with respect to $w$ and setting it to zero, we get:
+Derivando el Lagrangiano con respecto a $w$ e igualando a cero, obtenemos:
 \begin{align*}
 \frac{\partial \mathcal{L}}{\partial w} &= 2S_B w - 2\lambda S_W w \\
 0 &= S_B w - \lambda S_W w \\
@@ -167,7 +167,7 @@ S_B w &= \lambda S_W w \\
 S_W^{-1} S_B w &= \lambda w
 \end{align*}
 
-And therefore the solution must be an eigenvector of $S_W^{-1} S_B$, associated to the eigenvalue $\lambda$. Replacing in the original expression,
+Por lo tanto, la solución debe ser un autovector de $S_W^{-1} S_B$, asociado al autovalor $\lambda$. Reemplazando en la expresión original,
 
 \begin{align*}
 J(w) &= \frac{w^T S_B w}{w^T S_W w} \\
@@ -175,23 +175,22 @@ J(w) &= \frac{w^T S_B w}{w^T S_W w} \\
 & = \lambda
 \end{align*}
 
-Therefore, $w$ must be the eigenvector corresponding to the largest eigenvalue of $S_W^{-1} S_B$.
-
+Por lo tanto, $w$ debe ser el autovector correspondiente al mayor autovalor de $S_W^{-1} S_B$.
 \end{proof}
 
-\subsubsection{$L>1$ case}
-For $L>1$, the projection matrix $W$ is a matrix $W \in \mathbb{R}^{p \times L}$, and $W^T S_B W$ and $W^T S_W W$ are now $L \times L$ matrices. Different generalizations of the Fisher criterion exist, most of which however have the same solution. One common generalization is the following:
+\subsubsection{Caso $L>1$}
+
+Para $L>1$, la matriz de proyección $W$ es una matriz $W \in \mathbb{R}^{p \times L}$, y $W^T S_B W$ y $W^T S_W W$ son ahora matrices $L \times L$. Existen diferentes generalizaciones del criterio de Fisher, la mayoría de las cuales, sin embargo, tienen la misma solución. Una generalización común es la siguiente:
 
 \begin{definition}
-The generalized Fisher criterion is defined as the trace of the ratio of the between-class scatter to the within-class scatter:
-
+El criterio de Fisher generalizado se define como:
 \[
 J(W) = \text{tr}((W^T S_B W)^{-1} (W^T S_W W))
 \]
 \end{definition}
 
 \begin{theorem}
-The maximum of the generalized Fisher criterion $J(W)$ is achieved by the matrix $W$ whose columns are the eigenvectors corresponding to the $L$ largest eigenvalues of the matrix $S_W^{-1} S_B$.
+El máximo del criterio de Fisher generalizado $J(W)$ es alcanzado por la matriz $W$ cuyas columnas son los autovectores correspondientes a los $L$ mayores autovalores de la matriz $S_W^{-1} S_B$.
 \end{theorem}
 
-The proof of this theorem is substantially more complex than the $L=1$ case, as the use of the derivative of the trace operator respect to a matrix is involved, making the equations more intricate. The structure of the proof can be found in \cite{fukunaga1990introduction}.
+La demostración de este teorema es sustancialmente más compleja que el caso $L=1$, ya que el uso de la derivada del operador traza respecto a una matriz está involucrado, haciendo las ecuaciones más intrincadas. La estructura de la prueba puede encontrarse en \cite{fukunaga1990introduction}.

@@ -1,72 +1,72 @@
-\subsection{LDA: Approximating the Bayes optimal classifier}
+\subsection{LDA: Aproximación al clasificador óptimo de Bayes}
 
-In practice, obtaining the Bayes optimal classifier is often impossible because it requires knowledge of the posterior probabilities $\mathbb{P}(Y = k \mid X = x)$. These posterior probabilities are typically unknown, as they depend on the underlying distribution of the data, which is rarely available in real-world scenarios. Therefore, we need to approximate the Bayes classifier by making assumptions and using estimation techniques.
+En la práctica, obtener el clasificador óptimo de Bayes resulta generalmente imposible, ya que requiere conocer las probabilidades a posteriori $\mathbb{P}(Y = k \mid X = x)$. Estas probabilidades típicamente son desconocidas, pues dependen de la distribución subyacente de los datos, que rara vez está disponible en escenarios reales. Por tanto, necesitamos aproximar el clasificador de Bayes mediante suposiciones y estimaciones.
 
-To approximate the Bayes classifier, we will employ Bayes' theorem. We introduce the following notation:
+Para aproximar el clasificador de Bayes, emplearemos el teorema de Bayes. Introducimos la siguiente notación:
 \begin{itemize}
-    \item Let $f_k(x)$ represent the class-conditional density of $X$ for class $Y = k$.
-    \item Let $\pi_k$ represent the prior probability of class $k$.
+    \item Sea $f_k(x)$ la densidad condicional de $X$ condicionada por la clase $Y = k$.
+    \item Sea $\pi_k$ la probabilidad a priori de la clase $k$.
 \end{itemize}
 
-Using Bayes' theorem, we can express the posterior probability $\mathbb{P}(Y = k \mid X = x)$ as:
+Mediante el teorema de Bayes, podemos expresar la probabilidad a posteriori $\mathbb{P}(Y = k \mid X = x)$ como:
 \[
 \mathbb{P}(Y = k \mid X = x) = \frac{f_k(x) \, \pi_k}{\sum_{\ell=1}^K f_\ell(x) \, \pi_\ell}
 \]
 
-This formulation allows us to approximate the posterior probabilities using estimates of the class-conditional densities $f_k(x)$ and the priors $\pi_k$.
+Esta formulación nos permite aproximar las probabilidades a posteriori utilizando estimaciones de las densidades condicionales $f_k(x)$ y las probabilidades a priori $\pi_k$.
 
-Additionally, LDA makes the following assumptions:
+LDA realiza las siguientes suposiciones fundamentales:
 
 \begin{enumerate}
-    \item \textbf{Multivariate Gaussian Distributions}: The class-conditional densities $f_k(x)$ follow multivariate Gaussian distributions with mean vector $\mu_k$ and common covariance matrix $\Sigma$:
+    \item \textbf{Distribuciones gaussianas multivariadas}: Las densidades condicionales $f_k(x)$ siguen distribuciones gaussianas multivariadas con medias $\mu_k$ y matriz de covarianza común $\Sigma$:
     \[
     f_k(x) = \frac{1}{(2\pi)^{p/2} |\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(x - \mu_k)^T \Sigma^{-1} (x - \mu_k)\right)
     \]
-    \item \textbf{Equal Covariance Matrix}: The covariance matrix $\Sigma$ is the same for all classes.
+    \item \textbf{Matriz de covarianza común}: Todas las clases comparten la misma matriz de covarianza $\Sigma$.
 \end{enumerate}
 
-Additionally, we will assume the data is centered,
+Los parámetros de la distribución y las probabilidades a priori pueden estimarse a partir de datos de entrenamiento. Con este propósito, definimos algunas notaciones:
+
+\begin{itemize}
+    \item Sea $N_k$ el número de observaciones en la clase $k$.
+    \item Sea $N = \sum_{k=1}^K N_k$ el número total de observaciones.
+    \item Sea $\{(x_i, g_i)\}_{i=1}^N$ los datos de entrenamiento, donde $x_i$ son los vectores de características y $g_i$ son las etiquetas de clase verdaderas.
+\end{itemize}
+
+Supondremos además que los datos están centrados,
 
 \[
-\mu = \sum_{i=1}^N x_i = 0
+\hat{\mu} = \sum_{i=1}^N x_i = 0
 \]
 
-And that we have more samples than features, and more features than classes,
+Y que el número de muestras supera al número de características, y este a su vez al número de clases,
 
 \[
 N > p > K
 \]
 
-The parameters of the distribution and the priors can be estimated from training data. With this purpose, we define some notation:
+Estimaremos los parámetros del modelo mediante:
 
 \begin{itemize}
-    \item Let $N_k$ be the number of observations in class $k$.
-    \item Let $N = \sum_{k=1}^K N_k$ be the total number of observations.
-    \item Let $\{(x_i, g_i)\}_{i=1}^N$ be the training data, where $x_i$ are the feature vectors and $g_i$ are the true class labels.
-\end{itemize}
-
-We will estimate the priors $\pi_k$ by the class proportions, and the class means and covariance matrix by the sample means and unbiased sample covariance matrix of the training data:
-
-\begin{itemize}
-    \item \textbf{Class Priors}:
+    \item \textbf{Probabilidades a Priori de Clase}:
     \[
     \hat{\pi}_k = \frac{N_k}{N}
     \]
-    \item \textbf{Class Means}:
+    \item \textbf{Medias de Clase}:
     \[
     \hat{\mu}_k = \frac{1}{N_k} \sum_{i: g_i = k} x_i
     \]
-    \item \textbf{Covariance Matrix}:
+    \item \textbf{Matriz de Covarianza}:
     \begin{equation}
     \hat{\Sigma} = \frac{1}{N - K} \sum_{k=1}^K \sum_{i: g_i = k} (x_i - \hat{\mu}_k)(x_i - \hat{\mu}_k)^T \label{eq:sample-covariance}
     \end{equation}
 \end{itemize}
 
-We will assume the sample covariance matrix is invertible.
+Asumiremos que la matriz de covarianza muestral es invertible.
 
-\subsubsection{Derivation of the Classifier}
+\subsubsection{Derivación del clasificador}
 
-We will start from the Bayes optimal classifier and derive the LDA classifier under the previous assumptions and using the mentioned estimates.
+Partiendo del clasificador óptimo de Bayes, derivaremos el clasificador LDA bajo las suposiciones anteriores y utilizando las estimaciones mencionadas.
 
 \begin{align}
 \hat{Y} &= \arg\max_{k=1}^K \, \mathbb{P}(Y = k \mid X = x) \nonumber \\
@@ -78,32 +78,32 @@ We will start from the Bayes optimal classifier and derive the LDA classifier un
 &= \arg\max_{k=1}^K \, \left\{x^T \hat{\Sigma}^{-1} \hat{\mu}_k - \frac{1}{2}\hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log \hat{\pi}_k\right\} \nonumber
 \end{align}
 
-We have then derived a set of functions that, given an unseen feature vector $x$, the classifier assigns it to the class $k$ that maximizes the respective function. These functions are known as the discriminant functions.
+Hemos derivado un conjunto de funciones que, dado un vector de características no visto $x$, el clasificador lo asigna a la clase $k$ que maximiza la respectiva función. Estas funciones se conocen como funciones discriminantes.
 
 \begin{definition}
-The discriminant function for class $k$ is:
+La función discriminante para la clase $k$ es:
 \[
 \delta_k(x) = x^T \hat{\Sigma}^{-1} \hat{\mu}_k - \frac{1}{2} \hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log(\hat{\pi}_k)
 \]
 \end{definition}
 
-\subsubsection{Numerical Implementation}
+\subsubsection{Implementación numérica}
 
-To evaluate the discriminant functions efficiently, we will compute and store the coefficients $c_k$ and $d_k$ for each class $k$ from the training data:
+Para evaluar las funciones discriminantes eficientemente, calcularemos y almacenaremos los coeficientes $c_k$ y $d_k$ para cada clase $k$ a partir de los datos de entrenamiento:
 \begin{align*}
 c_k &= \hat{\Sigma}^{-1} \hat{\mu}_k \\
 d_k &= -\frac{1}{2} \hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log \hat{\pi}_k
 \end{align*}
 
-Then the discriminant function simplifies to:
+Luego, la función discriminante se simplifica a:
 \[
 \delta_k(x) = x^T c_k + d_k
 \]
 
-While we could explicitly compute the covariance matrix and its inverse, in practice it becomes computationally expensive for datasets with a large number of features, as well as numerically unstable, so a different algorithm will be used.
+Aunque podríamos calcular explícitamente la matriz de covarianza y su inversa, en la práctica esto se vuelve computacionalmente costoso para conjuntos de datos con un gran número de características, así como numéricamente inestable, por lo que se utilizará un algoritmo diferente.
 
 \begin{definition}
-The class-centered data matrix of the $k$-th class is defined as the matrix $X^{(k)} \in \mathbb{R}^{N_{k} \times p}$ whose rows are the data points of the $k$-th class with the respective mean subtracted:
+La matriz de datos centrados por clase de la clase $k$ se define como la matriz $X^{(k)} \in \mathbb{R}^{N_{k} \times p}$ cuyos filas son los puntos de datos de la clase $k$ con la respectiva media restada:
 
 $$
 X^{(k)} = \begin{bmatrix}
@@ -116,7 +116,7 @@ $$
 \end{definition}
 
 \begin{definition}
-The class-centered data matrix $X_c \in \mathbb{R}^{N \times p}$ is the concatenation of the class-centered data matrices for all classes:
+La matriz de datos centrados por clase $X_c \in \mathbb{R}^{N \times p}$ es la concatenación de las matrices de datos centrados por clase para todas las clases:
 \[
 X_c = \begin{bmatrix}
 X^{(1)} \\ X^{(2)} \\ \vdots \\ X^{(K)}
@@ -124,38 +124,34 @@ X^{(1)} \\ X^{(2)} \\ \vdots \\ X^{(K)}
 \]
 \end{definition}
 
-We will assume for simplicity that $X_c$ has full rank.
+Asumiremos para simplificar que $X_c$ tiene rango completo.
 
-Note that now, we can write the sample covariance matrix defined in Equation \ref{eq:sample-covariance} as:
-
+Observemos que ahora podemos escribir la matriz de covarianza muestral definida en la Ecuación \ref{eq:sample-covariance} como:
 \[
 \hat{\Sigma} = \frac{1}{N - K} X_c^T X_c
 \]
 
-Let $X_c = U D V^T$ be the singular value decomposition of the class-centered data matrix $X_c$. Then, the sample covariance matrix can be written as:
-
+Sea $X_c = U D V^T$ la descomposición en valores singulares (SVD) de la matriz de datos centrados por clase $X_c$. Entonces, la matriz de covarianza muestral se puede escribir como:
 \begin{align*}
 \hat{\Sigma} &= \frac{1}{N - K} X_{c}^{T} X_{c}  \\
 &= \frac{1}{N - K} VD^{T}U^{T}UDV^{T} \\
 &= \frac{1}{N - K} VD^{2}V^{T} \\
 \end{align*}
 
-And the inverse of the sample covariance matrix as:
-
+Y la inversa de la matriz de covarianza muestral como:
 \begin{align*}
 \hat{\Sigma}^{-1} &= \left( \frac{1}{N-K} VD^{2}V^{T} \right)^{-1} \\
 & = VD^{-2}V^{T} (N-K)
 \end{align*}
 
-To reduce the number of multiplications, we define the intermediate coefficients $\alpha_k$ and $\beta_k$ for each class $k$:
-
+Para reducir el número de multiplicaciones, definimos los coeficientes intermedios $\alpha_k$ y $\beta_k$ para cada clase $k$:
 
 \begin{align*}
 \alpha_{k} & = V^{T} \mu_{k}  \\
 \beta_{k} &= D^{-1}\alpha_{k}
 \end{align*}
 
-Now the $c_{k}$ coefficients simplify to
+Ahora, los coeficientes $c_{k}$ se simplifican a
 
 \begin{align*}
 c_{k} &= \Sigma^{-1} \mu_{k} \\
@@ -163,7 +159,7 @@ c_{k} &= \Sigma^{-1} \mu_{k} \\
 &= VD^{-2} \alpha_{k} (N-K) \\
 \end{align*}
 
-and the $d_{k}$ coefficients simplify to
+y los coeficientes $d_{k}$ se simplifican a
 
 \begin{align*}
 d_{k} &= -\frac{1}{2} \mu_{k}^{T} \Sigma^{-1} \mu_{k} + \log \pi_{k} \\
@@ -173,47 +169,47 @@ d_{k} &= -\frac{1}{2} \mu_{k}^{T} \Sigma^{-1} \mu_{k} + \log \pi_{k} \\
 & = - \frac{N-K}{2} \| \beta_{k} \|^2_{2} + \log \pi_{k}
 \end{align*}
 
-The resulting algorithm for training the LDA classifier is summarized in Algorithm \ref{alg:lda-training}.
+El algoritmo resultante para entrenar el clasificador LDA se resume en el Algoritmo \ref{alg:lda-training}.
 
 \begin{algorithm}[htbp]
-\caption{LDA Training Algorithm} \label{alg:lda-training}
+\caption{Algoritmo de Entrenamiento de LDA} \label{alg:lda-training}
 \begin{algorithmic}[1]
-\REQUIRE Training data $\{(x_i, y_i)\}_{i=1}^N$, with $x_i \in \mathbb{R}^p$, $y_i \in \{1,\ldots,K\}$
-\ENSURE Coefficients $\{ (c_k, d_k) \}_{k=1}^K$ for the discriminant functions
+\REQUIRE Datos de entrenamiento $\{(x_i, y_i)\}_{i=1}^N$, con $x_i \in \mathbb{R}^p$, $y_i \in \{1,\ldots,K\}$
+\ENSURE Coeficientes $\{ (c_k, d_k) \}_{k=1}^K$ para las funciones discriminantes
 
-\STATE \textbf{Initialization:}
+\STATE \textbf{Inicialización:}
 \begin{itemize}
-    \item $N \gets$ total number of samples
-    \item For each class $k$, initialize $N_k \gets 0$, $\hat{\mu}_k \gets 0$
+    \item $N \gets$ número total de muestras
+    \item Para cada clase $k$, inicializar $N_k \gets 0$, $\hat{\mu}_k \gets 0$
 \end{itemize}
 
-\STATE \textbf{Compute Class Counts and Sums:}
+\STATE \textbf{Calcular Conteos de Clases y Sumas:}
 \FOR{$i = 1$ to $N$}
     \STATE $k \gets y_i$
     \STATE $N_k \gets N_k + 1$
     \STATE $\hat{\mu}_k \gets \hat{\mu}_k + x_i$
 \ENDFOR
 
-\STATE \textbf{Compute Class Means and Priors:}
+\STATE \textbf{Calcular Medias de Clases y Priors:}
 \FOR{$k = 1$ to $K$}
     \STATE $\hat{\mu}_k \gets \hat{\mu}_k / N_k$
     \STATE $\hat{\pi}_k \gets N_k / N$
 \ENDFOR
 
-\STATE \textbf{Construct Centered Data Matrix:}
-\STATE Initialize $X_c \in \mathbb{R}^{N \times p}$
-\STATE $index \gets 1$
+\STATE \textbf{Construir la Matriz de Datos Centrados:}
+\STATE Inicializar $X_c \in \mathbb{R}^{N \times p}$
+\STATE $j \gets 1$
 \FOR{$k = 1$ to $K$}
-    \FOR{each $x_i$ such that $y_i = k$}
-        \STATE $X_c(index, :) \gets x_i - \hat{\mu}_k$
-        \STATE $index \gets index + 1$
+    \FOR{cada $x_i$ tal que $y_i = k$}
+        \STATE $X_c(j, :) \gets x_i - \hat{\mu}_k$
+        \STATE $j \gets j + 1$
     \ENDFOR
 \ENDFOR
 
-\STATE \textbf{Compute SVD of $X_c$:}
+\STATE \textbf{Calcular SVD de $X_c$:}
 \STATE $[U, D, V^\top] \gets \text{svd}(X_c)$
 
-\STATE \textbf{Compute Coefficients for Each Class:}
+\STATE \textbf{Calcular Coeficientes para Cada Clase:}
 \FOR{$k = 1$ to $K$}
     \STATE $\alpha_k \gets V^\top \hat{\mu}_k$
     \STATE $\beta_k \gets D^{-1} \alpha_k$
@@ -221,6 +217,6 @@ The resulting algorithm for training the LDA classifier is summarized in Algorit
     \STATE $d_k \gets -\dfrac{N - K}{2} \| \beta_k \|_2^2 + \ln \hat{\pi}_k$
 \ENDFOR
 
-\RETURN Coefficients $\{ (c_k, d_k) \}_{k=1}^K$
+\RETURN Coeficientes $\{ (c_k, d_k) \}_{k=1}^K$
 \end{algorithmic}
 \end{algorithm}
