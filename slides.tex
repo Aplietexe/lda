@@ -1,0 +1,460 @@
+\documentclass[spanish]{beamer}
+\usetheme{Warsaw}
+\usecolortheme{default}
+\usefonttheme{serif}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\hypersetup{colorlinks=true,linkcolor=red,urlcolor=blue}
+\usepackage{ragged2e}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title[LDA]{Análisis Discriminante Lineal:\\ Clasificación y Reducción de Dimensionalidad}
+\author[Pietro Palombini]{Pietro Palombini}
+\institute[FAMAF]{\includegraphics[scale=0.2]{logo_UNC-FAMAF.png}}
+\date{13 de Noviembre de 2024}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Esquema de la presentación}
+  \tableofcontents
+\end{frame}
+
+\section{Introducción}
+
+\begin{frame}{¿Qué es LDA?}
+\begin{itemize}
+    \item El Análisis Discriminante Lineal (LDA) es una técnica fundamental en:
+    \begin{itemize}
+        \item Reconocimiento de patrones
+        \item Aprendizaje automático
+    \end{itemize}
+    \item Cumple un doble propósito:
+    \begin{itemize}
+        \item Clasificador
+        \item Método de reducción de dimensionalidad
+    \end{itemize}
+    \item Desarrollado originalmente por R. A. Fisher
+    \item Encuentra combinaciones lineales de características que optimizan la separación entre clases
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Aplicaciones y Ventajas}
+\begin{block}{Aplicaciones}
+\begin{itemize}
+    \item Reconocimiento de imágenes
+    \item Bioinformática
+    \item Análisis de datos de alta dimensionalidad
+\end{itemize}
+\end{block}
+
+\begin{block}{Ventajas}
+\begin{itemize}
+    \item Fronteras de decisión lineales e interpretables
+    \item Eficiente computacionalmente
+    \item Reduce dimensionalidad preservando información discriminativa
+    \item Óptimo cuando las suposiciones se cumplen
+\end{itemize}
+\end{block}
+\end{frame}
+
+\section{Fundamentos de la Clasificación}
+
+\begin{frame}{Clasificadores}
+\begin{definition}[Clasificador]
+Sea $\mathcal{X} \subseteq \mathbb{R}^p$ el espacio de características y $\mathcal{Y} = \{1,\ldots,K\}$ el conjunto de etiquetas de clase. Un clasificador es una función $\hat{G}: \mathcal{X} \to \mathcal{Y}$ que asigna una etiqueta de clase a cada punto del espacio de características.
+\end{definition}
+
+\begin{block}{Objetivo}
+Encontrar un clasificador que:
+\begin{itemize}
+    \item Prediga correctamente la etiqueta $Y$ para nuevas observaciones $X$
+    \item Sea computacionalmente eficiente
+    \item Sea interpretable
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Error de Predicción Esperado}
+
+\begin{definition}[Error de Predicción Esperado]
+Sea $X \in \mathbb{R}^p$ un vector aleatorio de características, $Y \in \{1,\ldots,K\}$ una variable aleatoria categórica que representa la etiqueta de clase, y $\hat{G}: \mathbb{R}^p \to \{1,\ldots,K\}$ un clasificador. Sea $L: \{1,\ldots,K\} \times \{1,\ldots,K\} \to \mathbb{R}$ una función pérdida que mide el costo de una clasificación incorrecta.
+
+El Error de Predicción Esperado (EPE) del clasificador $\hat{G}(X)$ se define como la esperanza de la función de pérdida $L(Y, \hat{G}(X))$ sobre la distribución conjunta de $X$ e $Y$:
+\[
+\text{EPE}(\hat{G}) = \mathbb{E}[L(Y, \hat{G}(X))]
+\]
+\end{definition}
+\end{frame}
+
+\begin{frame}{Clasificador Óptimo de Bayes}
+\begin{definition}[Función de Pérdida]
+La función de pérdida cero-uno se define como:
+\[
+L(y, k) = \begin{cases}
+0 & \text{si } y = k \\
+1 & \text{si } y \neq k
+\end{cases}
+\]
+\end{definition}
+\begin{theorem}[Clasificador Óptimo de Bayes]
+El clasificador que minimiza el error de predicción esperado bajo la función de pérdida cero-uno asigna cada entrada $x$ a la clase con la mayor probabilidad a posteriori:
+\[
+\hat{G}(x) = \arg\max_{k=1}^K \mathbb{P}(Y = k \mid X = x)
+\]
+\end{theorem}
+\end{frame}
+
+\begin{frame}{Demostración}
+El error de predicción esperado del clasificador $\hat{G}(X)$ se puede escribir como:
+\begin{align*}
+\mathbb{E}[L(Y, \hat{G}(X))] & = \sum_{y=1}^K \int_{\mathbb{R}^{p}} L(y, \hat{G}(x)) f_{X|Y}(x|y)\mathbb{P}(Y=y)\, dx \\
+& = \int_{\mathbb{R}^{p}} \left( \sum_{y=1}^K L(y, \hat{G}(x)) \mathbb{P}(Y = y \mid X = x) \right) f_X(x) \, dx \\
+& = \mathbb{E}_X\left[ \sum_{y=1}^K L(y, \hat{G}(X)) \mathbb{P}(Y = y \mid X) \right]
+\end{align*}
+\end{frame}
+
+\begin{frame}{Demostración (cont.)}
+Para minimizar esta esperanza, podemos minimizar punto a punto para cada valor de $x$:
+\[
+\hat{G}(x) = \arg\min_{k=1}^K \sum_{y=1}^K L(y, k) \mathbb{P}(Y = y \mid X = x)
+\]
+Usando la función de pérdida cero-uno:
+\begin{align*}
+\hat{G}(x) & = \arg\min_{k=1}^K \left(1 - \mathbb{P}(Y = k \mid X = x)\right) \\
+& = \arg\max_{k=1}^K \mathbb{P}(Y = k \mid X = x)
+\end{align*}
+\end{frame}
+
+
+\section{LDA como Clasificador}
+
+\begin{frame}{Aproximación al Clasificador de Bayes}
+\begin{block}{Notación}
+\begin{itemize}
+    \item $f_k(x)$: densidad condicional de $X$ dado $Y = k$
+    \item $\pi_k$: probabilidad a priori de la clase $k$
+\end{itemize}
+\end{block}
+
+\begin{block}{Teorema de Bayes}
+La probabilidad a posteriori se expresa como:
+\[
+\mathbb{P}(Y = k \mid X = x) = \frac{f_k(x) \, \pi_k}{\sum_{\ell=1}^K f_\ell(x) \, \pi_\ell}
+\]
+\end{block}
+
+\end{frame}
+
+\begin{frame}{Suposiciones de LDA}
+\begin{block}{Suposición 1: Distribuciones Gaussianas}
+Las densidades condicionales $f_k(x)$ siguen distribuciones gaussianas multivariadas:
+\[
+f_k(x) = \frac{1}{(2\pi)^{p/2} |\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(x - \mu_k)^T \Sigma^{-1} (x - \mu_k)\right)
+\]
+\end{block}
+
+\begin{block}{Suposición 2: Matriz de Covarianza Común}
+Todas las clases comparten la misma matriz de covarianza $\Sigma$
+\end{block}
+
+\begin{alertblock}{Observación}
+Estas suposiciones conducen a fronteras de decisión lineales.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Notación}
+\begin{itemize}
+    \item $N_k$: número de observaciones en la clase $k$
+    \item $N = \sum_{k=1}^K N_k$: número total de observaciones
+    \item $\{(x_i, g_i)\}_{i=1}^N$: datos de entrenamiento
+\end{itemize}
+
+Supondremos además que los datos están centrados,
+
+\[
+\hat{\mu} = \sum_{i=1}^N x_i = 0
+\]
+
+Y que el número de muestras supera al número de características, y este a su vez al número de clases,
+
+\[
+N > p > K
+\]
+
+\end{frame}
+
+\begin{frame}{Estimadores}
+\begin{align*}
+\hat{\pi}_k &= \frac{N_k}{N} && \text{(probabilidades a priori)} \\
+\hat{\mu}_k &= \frac{1}{N_k} \sum_{i: g_i = k} x_i && \text{(medias)} \\
+\hat{\Sigma} &= \frac{1}{N - K} \sum_{k=1}^K \sum_{i: g_i = k} (x_i - \hat{\mu}_k)(x_i - \hat{\mu}_k)^T && \text{(covarianza)}
+\end{align*}
+
+Asumiremos que la matriz de covarianza muestral es invertible.
+\end{frame}
+
+\begin{frame}{Clasificador de LDA}
+\begin{align*}
+\hat{G}(x) &= \arg\max_{k=1}^K \, \mathbb{P}(Y = k \mid X = x) \nonumber \\
+&= \arg\max_{k=1}^K \, \left\{-\frac{1}{2}(x - \hat{\mu}_k)^T \hat{\Sigma}^{-1} (x - \hat{\mu}_k) + \log \hat{\pi}_k\right\} \label{eq:mahalanobis} \\
+&= \arg\max_{k=1}^K \, \left\{x^T \hat{\Sigma}^{-1} \hat{\mu}_k - \frac{1}{2}\hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log \hat{\pi}_k\right\} \nonumber
+\end{align*}
+
+\begin{definition}[Función Discriminante]
+La función discriminante para la clase $k$ es:
+\[
+\delta_k(x) = x^T \hat{\Sigma}^{-1} \hat{\mu}_k - \frac{1}{2} \hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log(\hat{\pi}_k)
+\]
+\end{definition}
+\end{frame}
+
+
+\begin{frame}{Implementación}
+La función discriminante se simplifica a
+\[
+\delta_k(x) = x^T c_k + d_k
+\]
+donde:
+\begin{itemize}
+    \item $c_k = \hat{\Sigma}^{-1} \hat{\mu}_k$
+    \item $d_k = -\frac{1}{2} \hat{\mu}_k^T \hat{\Sigma}^{-1} \hat{\mu}_k + \log \hat{\pi}_k$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Matrices de datos}
+Matriz de Datos Centrados por Clase de la clase $k$:
+Para la clase $k$:
+\[
+X^{(k)} = \begin{bmatrix}
+x_{1} - \mu_{k} \\
+x_{2} - \mu_{k}  \\
+\vdots \\
+x_{N_{k}} - \mu_{k}
+\end{bmatrix}
+\]
+
+Matriz de Datos Centrados:
+\[
+X_c = \begin{bmatrix}
+X^{(1)} \\ X^{(2)} \\ \vdots \\ X^{(K)}
+\end{bmatrix}
+\]
+
+\end{frame}
+
+\begin{frame}{Cómputo mediante SVD}
+Sea $X_c = U D V^T$ la SVD de $X_c$. Entonces:
+\begin{align*}
+\hat{\Sigma} &= \frac{1}{N - K} X_c^T X_c \\
+&= \frac{1}{N - K} V D^2 V^T
+\end{align*}
+
+Y
+\begin{align*}
+    \hat{\Sigma}^{-1} &= \left( \frac{1}{N-K} VD^{2}V^{T} \right)^{-1} \\
+    & = VD^{-2}V^{T} (N-K)
+\end{align*}
+
+\end{frame}
+\begin{frame}
+Definimos:
+\begin{align*}
+    \alpha_k &= V^T \mu_k \\
+    \beta_k &= D^{-1} \alpha_k
+\end{align*}
+Y tenemos
+\begin{align*}
+c_k &= (N-K) V D^{-2} \alpha_k \\
+d_k &= -\frac{N-K}{2} \|\beta_k\|_2^2 + \log \pi_k
+\end{align*}
+\end{frame}
+
+\section{LDA para Reducción de Dimensionalidad}
+
+\begin{frame}{Whitening}
+\begin{block}{Objetivo}
+Transformar los datos para que la matriz de covarianza sea la identidad:
+\[
+\text{Cov}(WX) = I
+\]
+\end{block}
+
+\begin{block}{Solución}
+\[
+W = \sqrt{N-K}D^{-1}V^T
+\]
+\end{block}
+
+\begin{block}{Datos Transformados}
+\begin{itemize}
+    \item Muestra: $x^* = Wx$
+    \item Medias: $\mu_k^* = W\hat{\mu}_k$
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Función Discriminante en el Espacio Transformado}
+\begin{definition}[Función Discriminante Transformada]
+En el espacio transformado, la función discriminante se simplifica a:
+\[
+\delta_k^*(x^*) = -\frac{1}{2}\|x^* - \mu_k^*\|_2^2 + \log \hat{\pi}_k
+\]
+\end{definition}
+
+\begin{theorem}
+El subespacio generado por las medias transformadas $\mu_k^*$ es de dimensión menor o igual a $K-1$:
+\[
+\dim(\mathrm{span}(\mu_1^*, \ldots, \mu_K^*)) \leq K-1
+\]
+\end{theorem}
+\end{frame}
+
+\begin{frame}{Matrices de Dispersión}
+\begin{definition}[Matriz de Dispersión Dentro de Clases]
+\[
+S_W = \sum_{k=1}^K \sum_{i: y_i = k} (x_i - \mu_k)(x_i - \mu_k)^T = X_c^T X_c = (N - K) \hat{\Sigma}
+\]
+\end{definition}
+
+\begin{definition}[Matriz de Dispersión Entre Clases]
+\[
+S_B = \sum_{k=1}^K N_k (\mu_k - \mu)(\mu_k - \mu)^T = \sum_{k=1}^K N_k \mu_k \mu_k^T
+\]
+\end{definition}
+
+\begin{block}{Objetivo}
+Encontrar la matriz de proyección $W$ que maximice la razón de la dispersión entre clases a la dispersión dentro de clases
+\end{block}
+\end{frame}
+
+\begin{frame}{Criterio de Fisher}
+\begin{definition}[Criterio de Fisher]
+Para el caso unidimensional ($L=1$), el criterio de Fisher se define como:
+\[
+J(w) = \frac{w^T S_B w}{w^T S_W w}
+\]
+\end{definition}
+
+\begin{theorem}
+El criterio de Fisher es invariante bajo un escalado del vector de proyección:
+\[
+\forall \alpha \in \mathbb{R} \setminus \{0\}, \quad J(\alpha w) = J(w)
+\]
+\end{theorem}
+\end{frame}
+
+\begin{frame}{Optimización}
+\begin{block}{Problema de Optimización}
+\begin{align*}
+& \underset{w \in \mathbb{R}^p}{\mathrm{maximizar}} \quad w^T S_B w \\
+& \text{sujeto a} \quad w^T S_W w = 1
+\end{align*}
+\end{block}
+
+\begin{theorem}
+La solución está dada por el autovector correspondiente al mayor autovalor de la matriz $S_W^{-1} S_B$.
+\end{theorem}
+
+\end{frame}
+
+\begin{frame}{Demostración}
+El Lagrangiano del problema es:
+\[
+\mathcal{L}(w, \lambda) = w^T S_B w - \lambda(w^T S_W w - 1)
+\]
+
+Para derivar respecto a $w$, usamos la identidad:
+\[
+\frac{\partial w^T A w}{\partial w} = 2Aw
+\]
+
+Derivando e igualando a cero:
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial w} &= 2S_B w - 2\lambda S_W w = 0 \\
+S_B w &= \lambda S_W w \\
+S_W^{-1} S_B w &= \lambda w
+\end{align*}
+
+\end{frame}
+
+\begin{frame}{Demostración (cont.)}
+Por lo tanto, $w$ es un autovector de $S_W^{-1} S_B$. Sustituyendo:
+\begin{align*}
+J(w) &= \frac{w^T S_B w}{w^T S_W w} = \frac{w^T \lambda S_W w}{w^T S_W w} = \lambda
+\end{align*}
+
+Entonces $w$ debe ser el autovector correspondiente al mayor autovalor de $S_W^{-1} S_B$.
+\end{frame}
+
+\begin{frame}{Caso $L>1$}
+La matriz de proyección $W$ es una matriz $W \in \mathbb{R}^{p \times L}$, y $W^T S_B W$ y $W^T S_W W$ son ahora matrices $L \times L$.
+
+\begin{definition}
+El criterio de Fisher generalizado se define como:
+\[
+J(W) = \text{tr}((W^T S_B W)^{-1} (W^T S_W W))
+\]
+\end{definition}
+
+\begin{theorem}
+El máximo del criterio de Fisher generalizado $J(W)$ es alcanzado por la matriz $W$ cuyas columnas son los autovectores correspondientes a los $L$ mayores autovalores de la matriz $S_W^{-1} S_B$.
+\end{theorem}
+\end{frame}
+
+\begin{frame}{Conclusiones}
+\begin{block}{Aspectos Teóricos}
+\begin{itemize}
+    \item LDA aproxima el clasificador óptimo de Bayes bajo suposiciones gaussianas
+    \item Proporciona una reducción de dimensionalidad supervisada
+    \item Las fronteras de decisión son lineales
+\end{itemize}
+\end{block}
+
+\begin{block}{Aspectos Prácticos}
+\begin{itemize}
+    \item Implementación computacionalmente eficiente mediante SVD
+    \item Proyecciones que maximizan la separabilidad entre clases
+    \item Útil tanto para clasificación como para visualización
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Referencias}
+\fontsize{7pt}{10pt}\selectfont
+\begin{thebibliography}{99}
+\setbeamertemplate{bibliography item}[book]
+\bibitem{hastie2009elements} Hastie, T., Tibshirani, R., \& Friedman, J.
+\newblock \emph{The Elements of Statistical Learning}.
+\newblock Springer, 2009.
+
+\bibitem{bishop2006pattern} Bishop, C. M.
+\newblock \emph{Pattern Recognition and Machine Learning}.
+\newblock Springer, 2006.
+
+\bibitem{qi2023mlmath} Qi Wei.
+\newblock \emph{Mathematical Foundations of Machine Learning}.
+\newblock Broadview Press, 2023.
+
+\bibitem{fukunaga1990introduction} Fukunaga, K.
+\newblock \emph{Introduction to Statistical Pattern Recognition}.
+\newblock Academic Press, 1990.
+
+\bibitem{duda2012pattern} Duda, R. O., Hart, P. E., \& Stork, D. G.
+\newblock \emph{Pattern Classification}.
+\newblock Wiley, 2012.
+
+\setbeamertemplate{bibliography item}[article]
+\bibitem{welling2006fisher} Welling, M.
+\newblock \emph{Fisher Linear Discriminant Analysis}.
+\newblock Department of Computer Science, University of Toronto, 2006.
+\end{thebibliography}
+\end{frame}
+
+\end{document}
